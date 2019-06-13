@@ -19,12 +19,14 @@ class Quest(object):
         html = get_html(QUEST_URL.format(qid))
         self._soup = BeautifulSoup(html, 'html5lib')
 
-        self.info = {'qid': qid, 'ah': 'AH', 'in': True, 'series': []}
+        self.info = None
         self.prev = []
         self.list = None
         self.next = []
 
-        self._parse_quest()
+        if html is not None:
+            self.info = {'qid': qid, 'ah': 'AH', 'in': True, 'series': []}
+            self._parse_quest()
 
     def _parse_info(self, info):
         for li in info.select('li'):
@@ -72,9 +74,9 @@ class Quest(object):
             ul_class = ul.get('class')
             if 'quest_list_event' in ul_class:
                 if self.list is None:
-                    self.prev = self._parse_quest_list(ul)
+                    self.prev = self._parse_quest_list(ul)[:1]
                 else:
-                    self.next = self._parse_quest_list(ul)
+                    self.next = self._parse_quest_list(ul)[:1]
             elif 'quest_list' in ul_class:
                 self.list = self._parse_quest_list(ul)
 
@@ -93,8 +95,9 @@ class Quest(object):
 
 class Dungeon(object):
 
-    def __init__(self, zid):
+    def __init__(self, zid, banned_qid=None):
         self.zid = zid
+        self.banned_qid = set([str(qid) for qid in banned_qid]) if banned_qid is not None else set()
         self.dungeon = None
 
         start = time.time()
@@ -119,15 +122,18 @@ class Dungeon(object):
 
         if series is not None:
             old_short = series[0] in new_series
+            found = False
             ins = 0
             for i, qid in enumerate(new_series):
                 if qid not in series:
-                    if old_short:
+                    if old_short and not found:
                         series.insert(ins, qid)
                         ins += 1
                     else:
                         series.extend(new_series[i:])
                         break
+                else:
+                    found = True
             quest['series'] = series
 
         series = quest['series']
@@ -148,6 +154,8 @@ class Dungeon(object):
             try:
                 title = tds[0].a
                 qid = title.get('href').split('/')[-1]
+                if qid in self.banned_qid:
+                    continue
                 self.qids.put(qid)
                 self.qid_set.add(qid)
             except:
@@ -162,6 +170,8 @@ class Dungeon(object):
             start = time.time()
             quest = Quest(self.dungeon, qid)
             print('Quest {} data downloaded in {:>.2f} seconds'.format(qid, time.time() - start))
-            self._add_quest(quest.detail)
+
+            if quest.detail is not None:
+                self._add_quest(quest.detail)
 
             time.sleep(0.5)
