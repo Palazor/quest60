@@ -148,21 +148,18 @@ class Dungeon(object):
         main = self._soup.select('.main .main_box .main_info')[0]
         self.dungeon = main.select('.top .title h1')[0].text
 
-        # quests = main.select('.grid .grid-table table tbody tr')[1:]
-        # for tr in quests:
-        #     tds = tr.select('td')
-        #     try:
-        #         title = tds[0].a
-        #         qid = title.get('href').split('/')[-1]
-        #         if qid in self.banned_qid:
-        #             continue
-        #         self.qids.put(qid)
-        #         self.qid_set.add(qid)
-        #     except:
-        #         continue
-        qid = '4341'
-        self.qids.put(qid)
-        self.qid_set.add(qid)
+        quests = main.select('.grid .grid-table table tbody tr')[1:]
+        for tr in quests:
+            tds = tr.select('td')
+            try:
+                title = tds[0].a
+                qid = title.get('href').split('/')[-1]
+                if qid in self.banned_qid:
+                    continue
+                self.qids.put(qid)
+                self.qid_set.add(qid)
+            except:
+                continue
 
         print('Start with {} quests'.format(self.qids.qsize()))
         while self.qids.qsize():

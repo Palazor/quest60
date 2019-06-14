@@ -18,15 +18,15 @@ class Tr(object):
         self.series = series
 
         quest_items = []
-        main_quest = None
+        self.main_quest = None
         for quest in self.series:
             quest_items.append(Quest(quest))
-            if main_quest is None and quest['in']:
-                main_quest = quest
+            if self.main_quest is None and quest['in']:
+                self.main_quest = quest
 
-        self.ah = main_quest['ah']
-        self.quest_items = quest_items
-        self.main_quest = main_quest
+        if self.main_quest is not None:
+            self.ah = self.main_quest['ah']
+            self.quest_items = quest_items
 
     def __str__(self):
         ah = IMG_A if 'A' in self.ah else ''
@@ -48,7 +48,9 @@ class Table(object):
 
         for series_id in series_list:
             series = [quests[qid] for qid in series_id.split(',')]
-            self.quests.append(Tr(series))
+            tr = Tr(series)
+            if tr.main_quest is not None:
+                self.quests.append(tr)
 
     def __str__(self):
         quests = sorted(self.quests, key=lambda x: x.ah)
